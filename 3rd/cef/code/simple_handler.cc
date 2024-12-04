@@ -64,10 +64,12 @@ void SimpleHandler::OnTitleChange(CefRefPtr<CefBrowser> browser,
     CefRefPtr<CefWindow> window = browser_view->GetWindow();
     if (window) {
       window->SetTitle(title);
+      printf("OnTitleChange window->SetTitle\n");
     }
   } else if (is_alloy_style_) {
     // Set the title of the window using platform APIs.
     PlatformTitleChange(browser, title);
+    printf("OnTitleChange is_alloy_style_\n");
   }
 }
 
@@ -77,6 +79,7 @@ void SimpleHandler::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   // Sanity-check the configured runtime style.
   CHECK_EQ(is_alloy_style_ ? CEF_RUNTIME_STYLE_ALLOY : CEF_RUNTIME_STYLE_CHROME,
            browser->GetHost()->GetRuntimeStyle());
+  printf("OnAfterCreated ..........\n");
 
   // Add to the list of existing browsers.
   browser_list_.push_back(browser);
@@ -92,6 +95,7 @@ bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser) {
     // Set a flag to indicate that the window close should be allowed.
     is_closing_ = true;
   }
+  printf("DoClose ..........\n");
 
   // Allow the close. For windowed browsers this will result in the OS close
   // event being sent.
@@ -100,6 +104,8 @@ bool SimpleHandler::DoClose(CefRefPtr<CefBrowser> browser) {
 
 void SimpleHandler::OnBeforeClose(CefRefPtr<CefBrowser> browser) {
   CEF_REQUIRE_UI_THREAD();
+
+  printf("OnBeforeClose ..........\n");
 
   // Remove from the list of existing browsers.
   BrowserList::iterator bit = browser_list_.begin();
@@ -141,9 +147,11 @@ void SimpleHandler::OnLoadError(CefRefPtr<CefBrowser> browser,
      << " (" << errorCode << ").</h2></body></html>";
 
   frame->LoadURL(GetDataURI(ss.str(), "text/html"));
+  printf("OnLoadError ..........\n");
 }
 
 void SimpleHandler::ShowMainWindow() {
+  printf("ShowMainWindow ..........\n");
   if (!CefCurrentlyOn(TID_UI)) {
     // Execute on the UI thread.
     CefPostTask(TID_UI, base::BindOnce(&SimpleHandler::ShowMainWindow, this));
@@ -167,6 +175,7 @@ void SimpleHandler::ShowMainWindow() {
 }
 
 void SimpleHandler::CloseAllBrowsers(bool force_close) {
+  printf("CloseAllBrowsers ..........\n");
   if (!CefCurrentlyOn(TID_UI)) {
     // Execute on the UI thread.
     CefPostTask(TID_UI, base::BindOnce(&SimpleHandler::CloseAllBrowsers, this,
@@ -193,6 +202,8 @@ void SimpleHandler::PlatformShowWindow(CefRefPtr<CefBrowser> browser) {
 void SimpleHandler::PlatformTitleChange(CefRefPtr<CefBrowser> browser,
                                         const CefString& title) {
   std::string titleStr(title);
+
+  printf("PlatformTitleChange ..........\n");
 
 #if defined(CEF_X11)
   // Retrieve the X11 display shared with Chromium.
@@ -227,3 +238,32 @@ void SimpleHandler::PlatformTitleChange(CefRefPtr<CefBrowser> browser,
 #endif  // defined(CEF_X11)
 }
 
+bool SimpleHandler::OnBeforePopup(CefRefPtr<CefBrowser> browser,
+                                  CefRefPtr<CefFrame> frame,
+                                  int popup_id,
+                                  const CefString &target_url,
+                                  const CefString &target_frame_name,
+                                  WindowOpenDisposition target_disposition,
+                                  bool user_gesture,
+                                  const CefPopupFeatures &popupFeatures,
+                                  CefWindowInfo &windowInfo,
+                                  CefRefPtr<CefClient> &client,
+                                  CefBrowserSettings &settings,
+                                  CefRefPtr<CefDictionaryValue> &extra_info,
+                                  bool *no_javascript_access)
+{
+  switch (target_disposition)
+  {
+  // case WOD_NEW_FOREGROUND_TAB:
+  // case WOD_NEW_BACKGROUND_TAB:
+  // case WOD_NEW_POPUP:
+  // case WOD_NEW_WINDOW:
+  case CEF_WOD_NEW_FOREGROUND_TAB:
+  case CEF_WOD_NEW_BACKGROUND_TAB:
+  case CEF_WOD_NEW_POPUP:
+  case CEF_WOD_NEW_WINDOW:
+    browser->GetMainFrame()->LoadURL(target_url);
+    return true;
+  }
+  return false;
+}

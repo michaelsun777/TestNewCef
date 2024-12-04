@@ -48,6 +48,21 @@ class SimpleHandler : public CefClient,
 
   bool IsClosing() const { return is_closing_; }
 
+  bool OnBeforePopup(CefRefPtr<CefBrowser> browser,
+                             CefRefPtr<CefFrame> frame,
+                             int popup_id,
+                             const CefString& target_url,
+                             const CefString& target_frame_name,
+                             WindowOpenDisposition target_disposition,
+                             bool user_gesture,
+                             const CefPopupFeatures& popupFeatures,
+                             CefWindowInfo& windowInfo,
+                             CefRefPtr<CefClient>& client,
+                             CefBrowserSettings& settings,
+                             CefRefPtr<CefDictionaryValue>& extra_info,
+                             bool* no_javascript_access) override;
+
+
  private:
   // Platform-specific implementation.
   void PlatformTitleChange(CefRefPtr<CefBrowser> browser,const CefString& title);
